@@ -125,8 +125,7 @@ def main():
         d = os.path.join(IMG_SRC, folder)
         files = sorted(f for f in os.listdir(d) if f.lower().endswith(EXTS)) if os.path.isdir(d) else []
         if not files:
-            warnings.append(f'{sku}: no photos in images/{folder} – skipped')
-            continue
+            warnings.append(f'{sku}: no photos yet in images/{folder} – showing a drawing instead')
         imgs = []
         for i, f in enumerate(files, 1):
             key = re.sub(r'[^a-z0-9]+', '-', f'{folder}-{os.path.splitext(f)[0]}'.lower()).strip('-')
@@ -144,6 +143,7 @@ def main():
             'gsm': int(num(g(row, 'Weight (g)'))) or None, 'price': sell, 'mrp': mrp, 'off': off,
             'stock': stock, 'featured': str(g(row, 'Featured (Y/N)') or '').strip().upper() == 'Y',
             'desc': str(g(row, 'Description (optional)') or '').strip(), 'img': imgs,
+            'art': ('a-kerchief' if cat == 'Napkins' else 'a-jute' if cat == 'Jute Bags' else 'a-white' if str(g(row, 'Filter Tag') or '') == 'White' else 'a-colour'),
         })
 
     # clean up stale images

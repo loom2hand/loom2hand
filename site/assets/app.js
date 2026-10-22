@@ -5,7 +5,8 @@
   var $ = function (s, r) { return (r || document).querySelector(s); };
   var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
   var BY = {}; P.forEach(function (p, i) { p.i = i; BY[p.sku] = p; });
-  var TAGS = [['', 'All'], ['White', 'White'], ['Colour', 'Colour'], ['Printed', 'Printed'], ['Checks', 'Checks & Stripes'], ['Kids', 'Kids Prints']];
+  var TAGS = [['', 'All'], ['White', 'White'], ['Colour', 'Colour'], ['Printed', 'Printed'], ['Checks', 'Checks'], ['Stripes', 'Stripes'], ['Kids', 'Kids Prints']];
+  P.forEach(function (p) { if (p.tag && !TAGS.some(function (t) { return t[0] === p.tag; })) TAGS.push([p.tag, p.tag]); });
   var WEAVE = {
     'Matty': 'Fine matty weave in pure cotton – smooth on skin, absorbent and quick to dry. A classic everyday towel that gets softer with every wash.',
     'Dobby': 'Textured dobby weave with a woven border. Absorbent, hard-wearing and easy to wash – a reliable daily towel.',
@@ -35,23 +36,25 @@
   function qtyTotalSku(sku) { return cart.reduce(function (a, l) { return a + (l.sku === sku ? l.qty : 0); }, 0); }
   function metaLine(p) { return [p.size, p.weave, p.gsm ? p.gsm + ' g' : ''].filter(Boolean).join(' · '); }
   function priceHtml(p) { return '<div class="price"><b>' + money(p.price) + '</b>' + (p.mrp > p.price ? '<s>' + money(p.mrp) + '</s><span class="off">' + p.off + '% off</span>' : '') + '</div>'; }
+  function art(p, cls) { return '<svg class="art ' + (cls || '') + '" viewBox="0 0 200 200" role="img" aria-label="' + esc(p.name) + ' – photo coming soon"><use href="#' + (p.art || 'a-colour') + '"/></svg>'; }
+  function notifyLink(p) { return waLink('Hi ' + (S.shop || 'Loom2hand') + ', please tell me when ' + p.name + ' [' + p.sku + '] is back in stock.'); }
   function toast(t) { var el = $('#toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(function () { el.classList.remove('show'); }, 1800); }
 
   /* ---------- cards ---------- */
   function card(p) {
     var s = stockOf(p), pill = '';
-    if (s <= 0) pill = '<span class="tagpill out">Sold out</span>';
+    if (s <= 0) pill = '<span class="tagpill out">Out of stock</span>';
     else if (s < low) pill = '<span class="tagpill alt">Only ' + s + ' left</span>';
     else if (p.featured) pill = '<span class="tagpill">Bestseller</span>';
     var multi = p.img.length > 1, q = multi ? 0 : inCart(p.sku, 0), a = p.img[0];
     var action;
-    if (s <= 0) action = '<button class="btn btn-ghost add" disabled>Sold out</button>';
+    if (s <= 0) action = '<a class="btn btn-ghost add" href="' + notifyLink(p) + '" target="_blank" rel="noopener">Notify me</a>';
     else if (multi) action = '<button class="btn btn-primary add" data-open="' + p.sku + '">Choose design</button>';
     else if (q) action = '<div class="stepper"><button data-dec="' + p.sku + '" aria-label="Remove one">−</button><span>' + q + ' in cart</span><button data-inc="' + p.sku + '" aria-label="Add one">+</button></div>';
     else action = '<button class="btn btn-primary add" data-add="' + p.sku + '">Add to cart</button>';
-    return '<article class="card" data-sku="' + p.sku + '">' +
+    return '<article class="card' + (s <= 0 ? ' is-out' : '') + '" data-sku="' + p.sku + '">' +
       '<button class="card-img" data-open="' + p.sku + '" aria-label="View ' + esc(p.name) + '">' +
-      '<img src="' + img(a.s) + '" srcset="' + img(a.s) + ' 480w,' + img(a.l) + ' 960w" sizes="(max-width:600px) 48vw,(max-width:1200px) 25vw,280px" width="480" height="480" loading="lazy" decoding="async" alt="' + esc(p.name) + '">' +
+      (a ? '<img src="' + img(a.s) + '" srcset="' + img(a.s) + ' 480w,' + img(a.l) + ' 960w" sizes="(max-width:600px) 48vw,(max-width:1200px) 25vw,280px" width="480" height="480" loading="lazy" decoding="async" alt="' + esc(p.name) + '">' : art(p) + '<span class="soon-photo">Photo coming soon</span>') +
       pill + (multi ? '<span class="designs-n">' + p.img.length + ' designs</span>' : '') + '</button>' +
       '<div class="card-body"><h3 data-open="' + p.sku + '">' + esc(p.name) + '</h3><p class="meta">' + esc(metaLine(p)) + '</p>' + priceHtml(p) + action + '</div></article>';
   }
@@ -68,12 +71,12 @@
       return words.every(function (w) { return hay.indexOf(w) > -1; });
     });
     var sorters = {
-      pop: function (a, b) { return (b.featured - a.featured) || ((stockOf(b) > 0) - (stockOf(a) > 0)) || a.i - b.i; },
+      pop: function (a, b) { return (b.featured - a.featured) || (b.img.length > 0) - (a.img.length > 0) || a.i - b.i; },
       lo: function (a, b) { return a.price - b.price; },
       hi: function (a, b) { return b.price - a.price; },
       off: function (a, b) { return b.off - a.off; }
     };
-    return list.sort(sorters[st.sort]);
+    return list.sort(function (a, b) { return ((stockOf(b) > 0) - (stockOf(a) > 0)) || sorters[st.sort](a, b); });
   }
 
   function renderChips() {
@@ -105,7 +108,8 @@
   }
 
   function renderFeatured() {
-    var f = P.filter(function (p) { return p.featured && stockOf(p) > 0; });
+    var inS = P.filter(function (p) { return stockOf(p) > 0 && p.img.length; });
+    var f = inS.filter(function (p) { return p.featured; }).concat(inS.filter(function (p) { return !p.featured; })).slice(0, 8);
     if (!f.length) { $('#featured-wrap').hidden = true; return; }
     $('#featured').innerHTML = f.map(card).join('');
   }
@@ -148,7 +152,7 @@
     $('#cartEmpty').hidden = !!cart.length; $('#checkout').hidden = !cart.length;
     $('#cartItems').innerHTML = cart.map(function (l) {
       var p = BY[l.sku], im = p.img[l.d] || p.img[0];
-      return '<div class="line"><img src="' + img(im.s) + '" alt="" width="64" height="64" loading="lazy">' +
+      return '<div class="line">' + (im ? '<img src="' + img(im.s) + '" alt="" width="64" height="64" loading="lazy">' : art(p, 'line-art')) +
         '<div><h4>' + esc(p.name) + '</h4><p class="meta">' + esc(p.size) + (p.img.length > 1 ? ' · ' + esc(im.label) : '') + ' · ' + money(p.price) + '</p>' +
         '<div class="stepper"><button data-ldec="' + l.sku + '|' + l.d + '" aria-label="Remove one">−</button><span>' + l.qty + '</span><button data-linc="' + l.sku + '|' + l.d + '" aria-label="Add one">+</button></div></div>' +
         '<div class="amt">' + money(p.price * l.qty) + '<br><button class="rm" data-lrm="' + l.sku + '|' + l.d + '">Remove</button></div></div>';
@@ -176,12 +180,12 @@
   var cur = null, curD = 0;
   function openProduct(sku, push) {
     var p = BY[sku]; if (!p) return; cur = p; curD = 0;
-    $('#pdTag').textContent = (p.tag === 'Checks' ? 'Checks & Stripes' : p.tag) + ' · 100% cotton';
+    $('#pdTag').textContent = [p.cat === 'Towels' ? '' : p.cat, p.tag, '100% cotton'].filter(Boolean).join(' · ');
     $('#pdName').textContent = p.name;
     $('#pdPrice').innerHTML = priceHtml(p).replace('class="price"', 'class="price big"') + '<span class="muted small">Price per piece, inclusive of taxes</span>';
     var s = stockOf(p), el = $('#pdStock');
     el.className = 'stock' + (s <= 0 ? ' out' : s < low ? ' low' : '');
-    el.textContent = s <= 0 ? 'Sold out – message us for restock' : s < low ? 'Only ' + s + ' left in stock' : 'In stock';
+    el.textContent = s <= 0 ? 'Out of stock – tap below and we will message you when it is back' : s < low ? 'Only ' + s + ' left in stock' : 'In stock';
     var multi = p.img.length > 1;
     $('#pdDesignWrap').hidden = !multi;
     $('#pdThumbs').hidden = multi;
@@ -189,9 +193,11 @@
     $('#pdThumbs').innerHTML = '';
     var rows = [['Size', p.size + (p.sizeCm ? ' (' + p.sizeCm + ')' : '')], ['Weave', p.weave], ['Weight', p.gsm ? p.gsm + ' g per piece' : ''], ['Yarn count', p.yarn], ['Material', '100% cotton'], ['Product code', p.sku]];
     $('#pdSpecs').innerHTML = rows.filter(function (r) { return r[1]; }).map(function (r) { return '<tr><th>' + r[0] + '</th><td>' + esc(r[1]) + '</td></tr>'; }).join('');
-    $('#pdDesc').textContent = p.desc || WEAVE[p.weave] || '';
+    $('#pdDesc').textContent = p.desc || WEAVE[p.weave] || ({ Napkins: 'Soft, absorbent pure cotton napkin – handy for daily use, the kitchen, travel and school bags.', Towels: 'Pure cotton towel – absorbent, breathable and soft on skin. Gets softer with every wash.' })[p.cat] || '';
     $('#pdQty').value = 1; $('#pdQty').max = isFinite(s) ? Math.max(1, s) : 999;
-    $('#pdAdd').disabled = $('#pdBuyNow').disabled = s <= 0;
+    $('#pdAdd').hidden = s <= 0;
+    $('#pdBuyNow').textContent = s <= 0 ? 'Notify me on WhatsApp' : 'Buy now on WhatsApp';
+    $('.qty').hidden = s <= 0;
     pickDesign(0);
     var dlg = $('#pd');
     if (!dlg.open) { dlg.showModal ? dlg.showModal() : dlg.setAttribute('open', ''); }
@@ -199,8 +205,10 @@
     if (push !== false) history.replaceState(null, '', '#p=' + encodeURIComponent(sku));
   }
   function pickDesign(i) {
-    curD = i; var im = cur.img[i];
-    var big = $('#pdImg'); big.src = img(im.l); big.alt = cur.name + (cur.img.length > 1 ? ' – ' + im.label : '');
+    curD = i; var im = cur.img[i], big = $('#pdImg'), holder = $('#pdArt');
+    big.hidden = !im; holder.hidden = !!im;
+    if (!im) { holder.innerHTML = art(cur) + '<span class="soon-photo">Photo coming soon</span>'; return; }
+    big.src = img(im.l); big.alt = cur.name + (cur.img.length > 1 ? ' – ' + im.label : '');
     $('#pdDesign').textContent = im.label;
     $$('#pdDesigns button').forEach(function (b, k) { b.classList.toggle('on', k === i); });
   }
@@ -216,7 +224,7 @@
     cart.forEach(function (l, i) {
       var p = BY[l.sku], im = p.img[l.d] || p.img[0];
       L.push((i + 1) + '. ' + p.name + ' [' + p.sku + ']');
-      L.push('   ' + p.size + (p.img.length > 1 ? ' | Design: ' + im.label : '') + ' | ' + l.qty + ' x ' + money(p.price) + ' = ' + money(l.qty * p.price));
+      L.push('   ' + p.size + (im && p.img.length > 1 ? ' | Design: ' + im.label : '') + ' | ' + l.qty + ' x ' + money(p.price) + ' = ' + money(l.qty * p.price));
     });
     L.push('', 'Items: ' + t.n + '   Subtotal: ' + money(t.sub) + ' (you save ' + money(t.mrp - t.sub) + ')');
     L.push('Shipping: ' + (t.ship === null ? 'please confirm' : t.ship === 0 ? 'Free' : money(t.ship)));
@@ -246,6 +254,7 @@
   }
   function buyNow() {
     if (!cur) return;
+    if (stockOf(cur) <= 0) { window.open(notifyLink(cur), '_blank', 'noopener'); return; }
     var q = Math.max(1, parseInt($('#pdQty').value, 10) || 1), im = cur.img[curD];
     var msg = 'Hi ' + (S.shop || 'Loom2hand') + ', I would like to order:\n' + cur.name + ' [' + cur.sku + ']\n' + cur.size + (cur.img.length > 1 ? ' | Design: ' + im.label : '') + '\nQty: ' + q + ' x ' + money(cur.price) + ' = ' + money(q * cur.price);
     window.open(waLink(msg), '_blank', 'noopener');
@@ -293,7 +302,7 @@
   (function init() {
     var towels = P.filter(function (p) { return p.cat === 'Towels'; }).length;
     $('#towelCount').textContent = towels + ' styles';
-    ['Kerchiefs', 'Jute Bags'].forEach(function (c) {
+    ['Napkins', 'Jute Bags'].forEach(function (c) {
       var n = P.filter(function (p) { return p.cat === c; }).length;
       if (n) $('.cat-tile[data-cat="' + c + '"] small').textContent = n + ' styles';
     });
