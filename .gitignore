@@ -1,0 +1,11 @@
+# Private – contains buying rates, never publish
+products.xlsx
+~$*.xlsx
+*.xlsx
+# Supplier's original photos (keep local)
+photo-originals/
+# Misc
+.DS_Store
+__pycache__/
+_to_delete/
+Claude outputs/
