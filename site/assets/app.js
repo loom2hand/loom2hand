@@ -309,7 +309,6 @@
     var hi = 'Hi ' + (S.shop || 'Loom2hand') + ', ';
     $('#waFab').href = waLink(hi + 'I have a question.');
     $('#bulkWa').href = waLink(hi + 'I want a bulk price for towels. Styles: ___ Quantity: ___');
-    $('#tagline').textContent = S.tagline || '';
     $('#yr').textContent = new Date().getFullYear();
     var c = [];
     if (S.wa) c.push('<li><a href="' + waLink('') + '" target="_blank" rel="noopener">WhatsApp: ' + esc(S.phone || '+' + S.wa) + '</a></li>');
