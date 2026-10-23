@@ -303,6 +303,23 @@
     closeProduct(); openCart();
   });
   $('#pdBuyNow').addEventListener('click', buyNow);
+  $$('[data-gift]').forEach(function (b) { b.addEventListener('click', function () { $('#gifts').scrollIntoView({ behavior: 'smooth' }); }); });
+  $$('[data-occasion]').forEach(function (b) { b.addEventListener('click', function () { $('#giftOccasion').value = b.dataset.occasion; $('#giftForm').scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(function () { $('#giftForm [name=qty]').focus({ preventScroll: true }); }, 400); }); });
+  $('#giftForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var f = {}; ['occasion', 'qty', 'budget', 'date', 'name', 'print', 'note'].forEach(function (k) { f[k] = String(e.target.elements[k].value || '').trim(); });
+    if (!/^\d+$/.test(f.qty)) { $('#giftErr').textContent = 'Please enter how many gifts you need.'; return; }
+    $('#giftErr').textContent = '';
+    var d = f.date ? new Date(f.date + 'T00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+    var L = ['*Gift enquiry – ' + (S.shop || 'Loom2hand') + '*', 'Occasion: ' + f.occasion, 'Quantity: ' + f.qty];
+    if (f.budget) L.push('Budget per gift: ' + money(+f.budget.replace(/\D/g, '') || 0));
+    if (d) L.push('Needed by: ' + d);
+    if (f.print) L.push('Print: ' + f.print);
+    if (f.note) L.push('Note: ' + f.note);
+    if (f.name) L.push('Name: ' + f.name);
+    window.open(waLink(L.join('\n')), '_blank', 'noopener');
+    toast('Opening WhatsApp…');
+  });
   $('#cartBtn').addEventListener('click', openCart);
   $('#cartClose').addEventListener('click', closeCart);
   $('#scrim').addEventListener('click', closeCart);
@@ -327,7 +344,6 @@
     });
     var hi = 'Hi ' + (S.shop || 'Loom2hand') + ', ';
     $('#waFab').href = waLink(hi + 'I have a question.');
-    $('#bulkWa').href = waLink(hi + 'I want a bulk price for towels. Styles: ___ Quantity: ___');
     $('#yr').textContent = new Date().getFullYear();
     var c = [];
     if (S.wa) c.push('<li><a href="' + waLink('') + '" target="_blank" rel="noopener">WhatsApp: ' + esc(S.phone || '+' + S.wa) + '</a></li>');

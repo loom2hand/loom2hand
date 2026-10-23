@@ -246,3 +246,29 @@ section.wrap{padding-top:44px}
 .done h3{font-size:1.4rem;margin:0;color:var(--green-d)}
 .done p{margin:0}
 .done-tick{width:64px;height:64px;border-radius:50%;background:var(--green);color:#fff;font-size:2rem;display:grid;place-items:center;margin:0 auto}
+
+/* gifts */
+.gifts{margin-top:56px;padding:48px 0;background:linear-gradient(180deg,#F6EEDD 0%,#FBF7EF 100%);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.g-head{max-width:720px}
+.g-head h2{font-size:clamp(1.5rem,3.6vw,2.2rem);color:var(--green-d);text-wrap:balance}
+.g-pills{list-style:none;padding:0;margin:14px 0 0;display:flex;flex-wrap:wrap;gap:8px}
+.g-pills li{background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:.88rem;font-weight:600;color:var(--brown)}
+.g-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:28px}
+.g-card{background:var(--paper);border-radius:18px;padding:18px;box-shadow:var(--sh);display:flex;flex-direction:column;gap:8px;min-width:0}
+.g-card svg{width:150px;height:150px;align-self:center;background:#F5EEDF;border-radius:50%;padding:6px}
+.g-card h3{font-size:1.2rem;margin:4px 0 0;color:var(--green-d)}
+.g-card p{margin:0;color:#4a413a;font-size:.94rem}
+.g-card ul{margin:0;padding-left:18px;font-size:.9rem;color:#4a413a;display:grid;gap:3px}
+.g-card .btn{margin-top:auto;align-self:flex-start}
+.g-split{display:grid;grid-template-columns:1fr 1.05fr;gap:24px;margin-top:32px;align-items:start}
+.g-steps h3,.g-form h3{font-size:1.25rem;color:var(--green-d)}
+.g-steps ol{list-style:none;counter-reset:s;padding:0;margin:0;display:grid;gap:14px}
+.g-steps li{counter-increment:s;position:relative;padding-left:48px;color:#4a413a}
+.g-steps li::before{content:counter(s);position:absolute;left:0;top:0;width:34px;height:34px;border-radius:50%;background:var(--green);color:#fff;font-family:Fredoka,system-ui;display:grid;place-items:center}
+.g-steps li b{display:block;color:var(--ink)}
+.g-form{background:var(--paper);border-radius:18px;padding:20px;box-shadow:var(--sh)}
+.g-form label{display:block;font-size:.85rem;font-weight:600;margin-bottom:10px}
+.g-form input,.g-form textarea,.g-form select{display:block;width:100%;margin-top:4px;border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:#fff;font-weight:400;font-size:16px}
+.g-form .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:860px){.g-cards{grid-template-columns:1fr}.g-split{grid-template-columns:1fr}.g-card{flex-direction:row;flex-wrap:wrap}.g-card svg{width:110px;height:110px}}
+@media (max-width:600px){.g-card{flex-direction:column}.g-card svg{width:130px;height:130px}}
