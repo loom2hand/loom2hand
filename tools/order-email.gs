@@ -40,24 +40,37 @@ function doPost(e) {
     var pdf = pdf_(order);
     var subject = SHOP + ' order ' + order.id + ' – ' + money_(order.total) + (order.shipping === null ? ' + shipping' : '');
 
+    // 1) customer copy first, so a problem here is recorded and shown in your email
+    var custStatus = 'No email given';
+    if (order.customer.email) {
+      try {
+        MailApp.sendEmail({
+          to: order.customer.email,
+          replyTo: OWNER_EMAIL,
+          subject: subject,
+          body: textMail_(order),
+          htmlBody: customerMail_(order),
+          attachments: [pdf],
+          name: SHOP
+        });
+        custStatus = 'Sent to ' + order.customer.email;
+      } catch (ce) {
+        custStatus = 'FAILED to ' + order.customer.email + ': ' + (ce && ce.message || ce);
+      }
+    }
+    order.custStatus = custStatus;
+    try { setStatus_(order.id, custStatus); } catch (se) {}
+
+    // 2) your copy
     MailApp.sendEmail({
       to: OWNER_EMAIL,
       replyTo: order.customer.email || OWNER_EMAIL,
       subject: 'New order ' + order.id + ' – ' + order.customer.name + ' – ' + money_(order.total),
+      body: textMail_(order) + '\nCustomer copy: ' + custStatus,
       htmlBody: ownerMail_(order),
       attachments: [pdf],
       name: SHOP + ' Website'
     });
-    if (order.customer.email) {
-      MailApp.sendEmail({
-        to: order.customer.email,
-        replyTo: OWNER_EMAIL,
-        subject: subject,
-        htmlBody: customerMail_(order),
-        attachments: [pdf],
-        name: SHOP
-      });
-    }
     cache.put('id_' + o.id, '1', 21600);
     cache.put(key, String(n + 1), 600);
     return out_({ ok: true, id: order.id });
@@ -123,14 +136,29 @@ function book_() {
   if (!ss) {
     ss = SpreadsheetApp.create('Loom2hand Orders');
     var o = ss.getSheets()[0].setName('Orders');
-    o.appendRow(['Order ID', 'Date', 'Status', 'Customer', 'Mobile', 'Email', 'Address', 'City', 'Pincode', 'Items', 'Subtotal', 'Shipping', 'Total', 'Note']);
-    o.getRange(1, 1, 1, 14).setFontWeight('bold').setBackground('#2E6B34').setFontColor('#ffffff'); o.setFrozenRows(1);
+    o.appendRow(['Order ID', 'Date', 'Status', 'Customer', 'Mobile', 'Email', 'Address', 'City', 'Pincode', 'Items', 'Subtotal', 'Shipping', 'Total', 'Note', 'Customer email']);
+    o.getRange(1, 1, 1, 15).setFontWeight('bold').setBackground('#2E6B34').setFontColor('#ffffff'); o.setFrozenRows(1);
     var l = ss.insertSheet('Order lines');
     l.appendRow(['Order ID', 'Date', 'SKU', 'Product', 'Size', 'Design', 'Qty', 'Price', 'Amount']);
     l.getRange(1, 1, 1, 9).setFontWeight('bold').setBackground('#2E6B34').setFontColor('#ffffff'); l.setFrozenRows(1);
     props.setProperty('SHEET_ID', ss.getId());
   }
   return ss;
+}
+
+function setStatus_(id, status) {
+  var sh = book_().getSheetByName('Orders'), last = sh.getLastRow();
+  if (sh.getRange(1, 15).getValue() !== 'Customer email') sh.getRange(1, 15).setValue('Customer email').setFontWeight('bold');
+  var ids = sh.getRange(Math.max(2, last - 50), 1, Math.min(51, last - 1), 1).getValues();
+  for (var i = ids.length - 1; i >= 0; i--) if (ids[i][0] === id) { sh.getRange(Math.max(2, last - 50) + i, 15).setValue(status); return; }
+}
+
+function textMail_(o) {
+  var L = [SHOP + ' order ' + o.id, ''];
+  o.items.forEach(function (i, k) { L.push((k + 1) + '. ' + i.name + (i.design ? ' (' + i.design + ')' : '') + ' – ' + i.qty + ' x ' + money_(i.price) + ' = ' + money_(i.amount)); });
+  L.push('', 'Total: ' + money_(o.total) + (o.shipping === null ? ' + shipping' : ''), '', 'Deliver to: ' + o.customer.name + ', ' + o.customer.addr + ', ' + o.customer.city + ' - ' + o.customer.pin + ', ' + o.customer.phone,
+    '', 'The PDF copy is attached. We will confirm stock, shipping and payment on WhatsApp ' + PHONE + '.');
+  return L.join('\n');
 }
 
 function save_(o) {
@@ -198,6 +226,7 @@ function ownerMail_(o) {
     '<p><b>' + h_(c.name) + '</b> · ' + c.phone + (c.email ? ' · ' + h_(c.email) : '') + '<br>' + h_(c.addr) + ', ' + h_(c.city) + ' – ' + c.pin + '</p>' +
     itemsList_(o) + '<p><b>Total: ' + money_(o.total) + (o.shipping === null ? ' + shipping' : '') + '</b></p>' +
     (c.note ? '<p>Note: ' + h_(c.note) + '</p>' : '') +
+    '<p><b>Customer copy:</b> ' + h_(o.custStatus || '') + '</p>' +
     '<p><a href="' + wa + '" style="background:#1FA855;color:#fff;padding:10px 16px;border-radius:20px;text-decoration:none">Reply on WhatsApp</a></p>' +
     '<p style="color:#6E655C">Saved in your "Loom2hand Orders" Google Sheet.</p></div>';
 }
@@ -213,6 +242,6 @@ function out_(o) { return ContentService.createTextOutput(JSON.stringify(o)).set
 function testOrder() {
   var cat = catalogue_(), sku = Object.keys(cat).filter(function (k) { return k !== '_s'; })[0];
   var r = doPost({ postData: { contents: JSON.stringify({ id: 'L2H-000000-' + (1000 + Math.floor(Math.random() * 9000)), items: [{ sku: sku, qty: 2 }],
-    customer: { name: 'Test Customer', phone: '9894561604', email: '', addr: '12 Main Road', city: 'Salem', pin: '636001', note: 'Test order – ignore' } }) } });
+    customer: { name: 'Test Customer', phone: '9894561604', email: OWNER_EMAIL, addr: '12 Main Road', city: 'Salem', pin: '636001', note: 'Test order – ignore' } }) } });
   Logger.log(r.getContent());
 }
