@@ -168,6 +168,7 @@
       '<div class="tot"><span>Total</span><span>' + money(t.total) + '</span></div>' + hint;
   }
   function openCart() {
+    $('#orderDone').hidden = true;
     renderCart(); $('#drawer').classList.add('open'); $('#drawer').setAttribute('aria-hidden', 'false'); $('#scrim').hidden = false;
     document.body.style.overflow = 'hidden';
     setTimeout(function () { $('#cartClose').focus(); }, 50);
@@ -217,9 +218,9 @@
   }
 
   /* ---------- checkout ---------- */
-  function orderText(f) {
-    var t = totals(), d = new Date();
-    var id = 'L2H-' + String(d.getFullYear()).slice(2) + ('0' + (d.getMonth() + 1)).slice(-2) + ('0' + d.getDate()).slice(-2) + '-' + Math.floor(1000 + Math.random() * 9000);
+  function newId() { var d = new Date(); return 'L2H-' + String(d.getFullYear()).slice(2) + ('0' + (d.getMonth() + 1)).slice(-2) + ('0' + d.getDate()).slice(-2) + '-' + Math.floor(1000 + Math.random() * 9000); }
+  function orderText(f, id) {
+    var t = totals();
     var L = ['*New order – ' + (S.shop || 'Loom2hand') + '*', 'Order ID: ' + id, ''];
     cart.forEach(function (l, i) {
       var p = BY[l.sku], im = p.img[l.d] || p.img[0];
@@ -230,17 +231,19 @@
     L.push('Shipping: ' + (t.ship === null ? 'please confirm' : t.ship === 0 ? 'Free' : money(t.ship)));
     L.push('*Total: ' + money(t.total) + (t.ship === null ? ' + shipping' : '') + '*', '');
     L.push('Name: ' + f.name, 'Mobile: ' + f.phone, 'Address: ' + f.addr, f.city + ' - ' + f.pin);
+    if (f.email) L.push('Email: ' + f.email);
     if (f.note) L.push('Note: ' + f.note);
     return L.join('\n');
   }
   function submitOrder(e) {
     e.preventDefault();
     var fd = new FormData(e.target), f = {};
-    ['name', 'phone', 'addr', 'city', 'pin', 'note'].forEach(function (k) { f[k] = String(fd.get(k) || '').trim(); });
+    ['name', 'phone', 'email', 'addr', 'city', 'pin', 'note', 'website'].forEach(function (k) { f[k] = String(fd.get(k) || '').trim(); });
     var err = '';
     var phone = f.phone.replace(/\D/g, '').replace(/^(91|0)(?=\d{10}$)/, '');
     if (!f.name) err = 'Please enter your name.';
     else if (!/^[6-9]\d{9}$/.test(phone)) err = 'Please enter a valid 10-digit mobile number.';
+    else if (f.email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(f.email)) err = 'Please check your email address.';
     else if (f.addr.length < 6) err = 'Please enter your full address.';
     else if (!f.city) err = 'Please enter your city.';
     else if (!/^\d{6}$/.test(f.pin)) err = 'Please enter a 6-digit pincode.';
@@ -248,9 +251,24 @@
     $('#formErr').textContent = err;
     if (err) return;
     f.phone = phone;
-    store.set('cust', { name: f.name, phone: f.phone, addr: f.addr, city: f.city, pin: f.pin });
-    window.open(waLink(orderText(f)), '_blank', 'noopener');
-    toast('Opening WhatsApp…');
+    store.set('cust', { name: f.name, phone: f.phone, email: f.email, addr: f.addr, city: f.city, pin: f.pin });
+    var id = newId(), t = totals();
+    window.open(waLink(orderText(f, id)), '_blank', 'noopener');
+    var mailed = sendOrderEmail(id, f);
+    $('#doneId').textContent = id;
+    $('#doneTotal').textContent = money(t.total) + (t.ship === null ? ' + shipping' : '');
+    $('#doneMail').textContent = !mailed ? '' : f.email ? 'A PDF copy of your order is on its way to ' + f.email + '.' : 'Add your email next time to get a PDF copy of your order.';
+    $('#doneWa').href = waLink(orderText(f, id));
+    cart = []; save(); updateBadge(); refreshCards(); renderCart();
+    $('#cartEmpty').hidden = true; $('#orderDone').hidden = false;
+    e.target.elements.note.value = '';
+  }
+  function sendOrderEmail(id, f) {
+    if (!S.orderUrl) return false;
+    var body = JSON.stringify({ id: id, website: f.website, customer: { name: f.name, phone: f.phone, email: f.email, addr: f.addr, city: f.city, pin: f.pin, note: f.note },
+      items: cart.map(function (l) { var p = BY[l.sku], im = p.img[l.d]; return { sku: l.sku, qty: l.qty, design: im && p.img.length > 1 ? im.label : '' }; }) });
+    try { fetch(S.orderUrl, { method: 'POST', mode: 'no-cors', keepalive: true, headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: body }).catch(function () {}); return true; }
+    catch (x) { try { return navigator.sendBeacon(S.orderUrl, new Blob([body], { type: 'text/plain' })); } catch (y) { return false; } }
   }
   function buyNow() {
     if (!cur) return;
@@ -288,6 +306,7 @@
   $('#cartBtn').addEventListener('click', openCart);
   $('#cartClose').addEventListener('click', closeCart);
   $('#scrim').addEventListener('click', closeCart);
+  $('#doneShop').addEventListener('click', function () { closeCart(); $('#shop').scrollIntoView(); });
   $('#cartShop').addEventListener('click', function () { closeCart(); st.cat = 'Towels'; renderChips(); renderGrid(); $('#shop').scrollIntoView(); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeCart(); });
   $('#checkout').addEventListener('submit', submitOrder);

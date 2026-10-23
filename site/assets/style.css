@@ -241,3 +241,8 @@ section.wrap{padding-top:44px}
 .line-art{width:64px;height:64px;border-radius:10px;background:#F7F3EC}
 .card.is-out .card-img img,.card.is-out .card-img .art{filter:grayscale(.55);opacity:.75}
 .card.is-out .price b{color:var(--muted)}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.done{text-align:center;padding:28px 4px;display:grid;gap:10px}
+.done h3{font-size:1.4rem;margin:0;color:var(--green-d)}
+.done p{margin:0}
+.done-tick{width:64px;height:64px;border-radius:50%;background:var(--green);color:#fff;font-size:2rem;display:grid;place-items:center;margin:0 auto}

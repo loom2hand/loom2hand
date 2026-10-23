@@ -158,6 +158,7 @@ def main():
         'location': S.get('Location') or '', 'instagram': S.get('Instagram URL') or '',
         'shipFee': num(S.get('Shipping fee (₹)')), 'freeAbove': num(S.get('Free shipping above (₹)')),
         'minOrder': num(S.get('Minimum order (₹)')), 'lowStock': low,
+        'orderUrl': str(S.get('Order email script URL') or '').strip(),
     }
     ver = time.strftime('%Y%m%d%H%M')
     data = {'v': ver, 'settings': public, 'products': products}

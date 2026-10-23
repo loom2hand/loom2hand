@@ -332,13 +332,24 @@
       <h3>Delivery details</h3>
       <label>Full name<input name="name" required autocomplete="name"></label>
       <label>Mobile number<input name="phone" required inputmode="tel" autocomplete="tel" placeholder="10-digit mobile"></label>
+      <label>Email (optional – we email you a PDF of your order)<input name="email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com"></label>
+      <label class="hp" aria-hidden="true">Website<input name="website" tabindex="-1" autocomplete="off"></label>
       <label>Address<textarea name="addr" rows="2" required autocomplete="street-address" placeholder="House no, street, area"></textarea></label>
       <div class="two"><label>City<input name="city" required autocomplete="address-level2"></label><label>Pincode<input name="pin" required inputmode="numeric" maxlength="6" autocomplete="postal-code"></label></div>
       <label>Order note (optional)<textarea name="note" rows="2" placeholder="Preferred colours, gift message…"></textarea></label>
       <p class="err" id="formErr" role="alert"></p>
-      <button class="btn btn-wa full" type="submit">Send order on WhatsApp</button>
-      <p class="muted small">We confirm stock, shipping and payment on WhatsApp before dispatch.</p>
+      <button class="btn btn-wa full" type="submit">Place order</button>
+      <p class="muted small">Your order goes to our WhatsApp and email. We confirm stock, shipping and payment before dispatch.</p>
     </form>
+    <div class="done" id="orderDone" hidden>
+      <div class="done-tick" aria-hidden="true">✓</div>
+      <h3>Order placed</h3>
+      <p>Order ID <b id="doneId"></b><br>Total <b id="doneTotal"></b></p>
+      <p id="doneMail" class="muted"></p>
+      <p class="muted small">WhatsApp opened with your order. If it didn't, tap below to send it.</p>
+      <a class="btn btn-wa full" id="doneWa" target="_blank" rel="noopener">Send on WhatsApp</a>
+      <button class="btn btn-ghost full" id="doneShop" type="button">Continue shopping</button>
+    </div>
   </div>
 </aside>
 
