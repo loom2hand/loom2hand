@@ -213,7 +213,7 @@ function itemsList_(o) {
 function customerMail_(o) {
   return '<div style="font-family:Arial,sans-serif;color:#2A2320;max-width:560px">' +
     '<h2 style="color:#2E6B34;margin:0">Thank you, ' + h_(o.customer.name) + '!</h2>' +
-    '<p>We have received your order <b>' + o.id + '</b>. The PDF copy is attached.</p>' + itemsList_(o) +
+    '<p>We have received your order <b>' + o.id + '</b>. The PDF copy is attached.</p><p style="color:#6E655C;font-size:13px">Tip: add ' + OWNER_EMAIL + ' to your contacts so our emails reach your inbox.</p>' + itemsList_(o) +
     '<p><b>Total: ' + money_(o.total) + (o.shipping === null ? ' + shipping' : '') + '</b></p>' +
     '<p>We will message you on WhatsApp to confirm stock, shipping and payment before we dispatch.</p>' +
     '<p style="color:#6E655C">' + SHOP + ' · ' + TAGLINE + '<br>WhatsApp ' + PHONE + ' · ' + SITE_URL + '</p></div>';

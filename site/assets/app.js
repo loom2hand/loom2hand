@@ -257,7 +257,7 @@
     var mailed = sendOrderEmail(id, f);
     $('#doneId').textContent = id;
     $('#doneTotal').textContent = money(t.total) + (t.ship === null ? ' + shipping' : '');
-    $('#doneMail').textContent = !mailed ? '' : f.email ? 'A PDF copy of your order is on its way to ' + f.email + '.' : 'Add your email next time to get a PDF copy of your order.';
+    $('#doneMail').textContent = !mailed ? '' : f.email ? 'A PDF copy of your order is on its way to ' + f.email + '. If you don\'t see it in a few minutes, please check your Spam folder and mark it "Not spam".' : 'Add your email next time to get a PDF copy of your order.';
     $('#doneWa').href = waLink(orderText(f, id));
     cart = []; save(); updateBadge(); refreshCards(); renderCart();
     $('#cartEmpty').hidden = true; $('#orderDone').hidden = false;
