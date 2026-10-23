@@ -40,6 +40,9 @@ loom2hand/
 
 ## Publishing (GitHub Pages)
 
+Live site: https://loom2hand.in (domain from Spaceship, DNS points to GitHub Pages).
+
+
 This folder is a git repo. Every push to `main` runs `.github/workflows/pages.yml`, which publishes the `site/` folder to GitHub Pages.
 `products.xlsx` (buying rates) and `photo-originals/` are in `.gitignore` and are never uploaded.
 
