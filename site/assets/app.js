@@ -41,6 +41,23 @@
   function toast(t) { var el = $('#toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(function () { el.classList.remove('show'); }, 1800); }
 
   /* ---------- cards ---------- */
+  function slider(p) {
+    return '<div class="card-img slider" data-sku="' + p.sku + '">' +
+      '<div class="sl-track" tabindex="0" aria-label="' + esc(p.name) + ' – ' + p.img.length + ' designs, swipe to see all">' +
+      p.img.map(function (im, i) {
+        return '<button class="sl-item" data-open="' + p.sku + '" data-d="' + i + '" aria-label="' + esc(p.name + ' – ' + im.label) + '"><img src="' + img(im.s) + '" srcset="' + img(im.s) + ' 480w,' + img(im.l) + ' 960w" sizes="(max-width:600px) 48vw,(max-width:1200px) 25vw,280px" width="480" height="480" loading="lazy" decoding="async" alt="' + esc(p.name + ' – ' + im.label) + '"></button>';
+      }).join('') + '</div>' +
+      '<button class="sl-nav prev" data-sl="-1" aria-label="Previous design">‹</button><button class="sl-nav next" data-sl="1" aria-label="Next design">›</button>' +
+      '<span class="designs-n"><span class="sl-pos">1</span> / ' + p.img.length + ' designs</span>' +
+      '<span class="sl-label">' + esc(p.img[0].label) + '</span></div>';
+  }
+  function slidePos(track) { return Math.round(track.scrollLeft / track.clientWidth); }
+  document.addEventListener('scroll', function (e) {
+    var t = e.target; if (!t.classList || !t.classList.contains('sl-track')) return;
+    var box = t.parentNode, p = BY[box.dataset.sku], i = slidePos(t);
+    if (!p || !p.img[i]) return;
+    box.querySelector('.sl-pos').textContent = i + 1; box.querySelector('.sl-label').textContent = p.img[i].label;
+  }, true);
   function card(p) {
     var s = stockOf(p), pill = '';
     if (s <= 0) pill = '<span class="tagpill out">Out of stock</span>';
@@ -53,9 +70,10 @@
     else if (q) action = '<div class="stepper"><button data-dec="' + p.sku + '" aria-label="Remove one">−</button><span>' + q + ' in cart</span><button data-inc="' + p.sku + '" aria-label="Add one">+</button></div>';
     else action = '<button class="btn btn-primary add" data-add="' + p.sku + '">Add to cart</button>';
     return '<article class="card' + (s <= 0 ? ' is-out' : '') + '" data-sku="' + p.sku + '">' +
+      (multi ? slider(p) + pill :
       '<button class="card-img" data-open="' + p.sku + '" aria-label="View ' + esc(p.name) + '">' +
       (a ? '<img src="' + img(a.s) + '" srcset="' + img(a.s) + ' 480w,' + img(a.l) + ' 960w" sizes="(max-width:600px) 48vw,(max-width:1200px) 25vw,280px" width="480" height="480" loading="lazy" decoding="async" alt="' + esc(p.name) + '">' : art(p) + '<span class="soon-photo">Photo coming soon</span>') +
-      pill + (multi ? '<span class="designs-n">' + p.img.length + ' designs</span>' : '') + '</button>' +
+      pill + '</button>') +
       '<div class="card-body"><h3 data-open="' + p.sku + '">' + esc(p.name) + '</h3><p class="meta">' + esc(metaLine(p)) + '</p>' + priceHtml(p) + action + '</div></article>';
   }
 
@@ -181,7 +199,7 @@
   var cur = null, curD = 0;
   function openProduct(sku, push) {
     var p = BY[sku]; if (!p) return; cur = p; curD = 0;
-    $('#pdTag').textContent = [p.cat === 'Towels' ? '' : p.cat, p.tag, '100% cotton'].filter(Boolean).join(' · ');
+    $('#pdTag').textContent = [p.cat === 'Towels' ? '' : p.cat, p.tag, p.cat === 'Jute Bags' ? 'Natural jute' : '100% cotton'].filter(Boolean).join(' · ');
     $('#pdName').textContent = p.name;
     $('#pdPrice').innerHTML = priceHtml(p).replace('class="price"', 'class="price big"') + '<span class="muted small">Price per piece, inclusive of taxes</span>';
     var s = stockOf(p), el = $('#pdStock');
@@ -192,9 +210,9 @@
     $('#pdThumbs').hidden = multi;
     $('#pdDesigns').innerHTML = p.img.map(function (im, i) { return '<button data-design="' + i + '" aria-label="' + esc(im.label) + '"><img src="' + img(im.s) + '" alt="" width="60" height="60" loading="lazy"></button>'; }).join('');
     $('#pdThumbs').innerHTML = '';
-    var rows = [['Size', p.size + (p.sizeCm ? ' (' + p.sizeCm + ')' : '')], ['Weave', p.weave], ['Weight', p.gsm ? p.gsm + ' g per piece' : ''], ['Yarn count', p.yarn], ['Material', '100% cotton'], ['Product code', p.sku]];
+    var rows = [['Size', p.size + (p.sizeCm ? ' (' + p.sizeCm + ')' : '')], ['Weave', p.weave], ['Weight', p.gsm ? p.gsm + ' g per piece' : ''], ['Yarn count', p.yarn], ['Material', p.cat === 'Jute Bags' ? 'Natural jute' : '100% cotton'], ['Product code', p.sku]];
     $('#pdSpecs').innerHTML = rows.filter(function (r) { return r[1]; }).map(function (r) { return '<tr><th>' + r[0] + '</th><td>' + esc(r[1]) + '</td></tr>'; }).join('');
-    $('#pdDesc').textContent = p.desc || WEAVE[p.weave] || ({ Napkins: 'Soft, absorbent pure cotton napkin – handy for daily use, the kitchen, travel and school bags.', Towels: 'Pure cotton towel – absorbent, breathable and soft on skin. Gets softer with every wash.' })[p.cat] || '';
+    $('#pdDesc').textContent = p.desc || WEAVE[p.weave] || ({ 'Hand Towels': 'Soft, absorbent pure cotton hand towel (15" × 25") – handy for wiping hands and face, the kitchen, travel, school and office bags.', 'Jute Bags': 'Eco-friendly natural jute bag – strong, reusable and a lovely return gift.', Towels: 'Pure cotton towel – absorbent, breathable and soft on skin. Gets softer with every wash.' })[p.cat] || '';
     $('#pdQty').value = 1; $('#pdQty').max = isFinite(s) ? Math.max(1, s) : 999;
     $('#pdAdd').hidden = s <= 0;
     $('#pdBuyNow').textContent = s <= 0 ? 'Notify me on WhatsApp' : 'Buy now on WhatsApp';
@@ -212,7 +230,16 @@
     big.src = img(im.l); big.alt = cur.name + (cur.img.length > 1 ? ' – ' + im.label : '');
     $('#pdDesign').textContent = im.label;
     $$('#pdDesigns button').forEach(function (b, k) { b.classList.toggle('on', k === i); });
+    $('#pdNav').hidden = cur.img.length < 2; $('#pdCount').textContent = (i + 1) + ' / ' + cur.img.length;
   }
+  function stepDesign(k) { if (cur && cur.img.length > 1) pickDesign((curD + k + cur.img.length) % cur.img.length); }
+  (function () {
+    var x0 = null, el = document.querySelector('.pd-main');
+    el.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+    el.addEventListener('touchend', function (e) { if (x0 === null) return; var dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 40) stepDesign(dx < 0 ? 1 : -1); });
+    document.addEventListener('keydown', function (e) { if (!$('#pd').open) return; if (e.key === 'ArrowRight') stepDesign(1); if (e.key === 'ArrowLeft') stepDesign(-1); });
+  })();
+  document.addEventListener('pdstep', function (e) { stepDesign(e.detail); });
   function closeProduct() {
     var dlg = $('#pd'); if (dlg.open) dlg.close ? dlg.close() : dlg.removeAttribute('open');
   }
@@ -280,10 +307,11 @@
 
   /* ---------- events ---------- */
   document.addEventListener('click', function (e) {
-    var t = e.target.closest('[data-open],[data-add],[data-inc],[data-dec],[data-tag],[data-cat],[data-cat-link],[data-design],[data-q],[data-linc],[data-ldec],[data-lrm],[data-close]');
+    var t = e.target.closest('[data-sl],[data-open],[data-add],[data-inc],[data-dec],[data-tag],[data-cat],[data-cat-link],[data-design],[data-q],[data-linc],[data-ldec],[data-lrm],[data-close]');
     if (!t) return;
     var ds = t.dataset;
-    if (ds.open) openProduct(ds.open);
+    if (ds.sl) { var tr = t.parentNode.querySelector('.sl-track'), n = tr.children.length, i = (slidePos(tr) + +ds.sl + n) % n; tr.scrollTo({ left: i * tr.clientWidth, behavior: 'smooth' }); return; }
+    if (ds.open) { openProduct(ds.open); if (ds.d) pickDesign(+ds.d); }
     else if (ds.add) { add(ds.add, 0, 1); toast('Added to cart'); }
     else if (ds.inc) add(ds.inc, 0, 1);
     else if (ds.dec) setQty(ds.dec, 0, inCart(ds.dec, 0) - 1);
@@ -338,7 +366,7 @@
   (function init() {
     var towels = P.filter(function (p) { return p.cat === 'Towels'; }).length;
     $('#towelCount').textContent = towels + ' styles';
-    ['Napkins', 'Jute Bags'].forEach(function (c) {
+    ['Hand Towels', 'Jute Bags'].forEach(function (c) {
       var n = P.filter(function (p) { return p.cat === c; }).length;
       if (n) $('.cat-tile[data-cat="' + c + '"] small').textContent = n + ' styles';
     });

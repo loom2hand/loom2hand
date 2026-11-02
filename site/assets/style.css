@@ -272,3 +272,19 @@ section.wrap{padding-top:44px}
 .g-form .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 @media (max-width:860px){.g-cards{grid-template-columns:1fr}.g-split{grid-template-columns:1fr}.g-card{flex-direction:row;flex-wrap:wrap}.g-card svg{width:110px;height:110px}}
 @media (max-width:600px){.g-card{flex-direction:column}.g-card svg{width:130px;height:130px}}
+
+/* card slider */
+.slider{position:relative;cursor:default}
+.sl-track{display:flex;width:100%;height:100%;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain}
+.sl-track::-webkit-scrollbar{display:none}
+.sl-item{flex:0 0 100%;scroll-snap-align:center;border:0;padding:0;background:transparent;cursor:pointer}
+.sl-item img{width:100%;height:100%;object-fit:cover}
+.sl-nav{position:absolute;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:50%;border:0;background:rgba(255,255,255,.92);box-shadow:var(--sh);font-size:1.5rem;line-height:1;cursor:pointer;color:var(--ink);display:grid;place-items:center;padding:0 0 3px;opacity:0;transition:opacity .2s}
+.sl-nav.prev{left:8px}.sl-nav.next{right:8px}
+.card:hover .sl-nav,.sl-nav:focus-visible{opacity:1}
+@media (hover:none){.sl-nav{opacity:.85;width:28px;height:28px;font-size:1.2rem}}
+.sl-label{position:absolute;left:10px;bottom:10px;background:rgba(255,255,255,.92);font-size:.72rem;font-weight:600;padding:3px 9px;border-radius:999px;max-width:55%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pd-main{position:relative}
+.pd-nav{position:absolute;left:0;right:0;bottom:12px;display:flex;justify-content:center;align-items:center;gap:10px}
+.pd-nav .sl-nav{position:static;transform:none;opacity:1}
+.pd-count{background:rgba(255,255,255,.92);padding:4px 12px;border-radius:999px;font-weight:600;font-size:.85rem}

@@ -83,8 +83,9 @@ def make_webp(src, key):
 
 def inch_to_cm(s):
     try:
-        a, b = [float(x) for x in re.split(r'\s*[xX×]\s*', str(s))[:2]]
-        return f'{a:g}" × {b:g}"', f'{round(a*2.54)} × {round(b*2.54)} cm'
+        v = [float(x) for x in re.split(r'\s*[xX×*]\s*', str(s).strip()) if x][:3]
+        if len(v) < 2: raise ValueError
+        return ' × '.join(f'{x:g}"' for x in v), ' × '.join(str(round(x * 2.54)) for x in v) + ' cm'
     except Exception:
         return str(s or ''), ''
 
@@ -118,8 +119,10 @@ def main():
         buy = num(g(row, 'Buy Rate (₹)'), 0)
         if not active:
             continue
-        if buy <= 0:
-            warnings.append(f'{sku}: active but no Buy Rate – skipped')
+        fixed = g(row, 'Selling Price (₹)')
+        fixed = fixed if isinstance(fixed, (int, float)) and fixed > 0 else None
+        if buy <= 0 and not fixed:
+            warnings.append(f'{sku}: active but no Buy Rate or Selling Price – skipped')
             continue
         folder = str(g(row, 'Image Folder') or sku).strip()
         d = os.path.join(IMG_SRC, folder)
@@ -132,7 +135,12 @@ def main():
             a, b = make_webp(os.path.join(d, f), key)
             used.update((a, b))
             imgs.append({'s': a, 'l': b, 'label': label_from(f, i)})
-        sell, mrp, off = prices(buy, markup, disc)
+        if fixed:
+            sell = int(round(fixed))
+            mrp = max(sell, int(math.floor((sell / (1 - disc) + 1) / 10 + 0.5)) * 10 - 1) if disc > 0 else sell
+            off = int((mrp - sell) * 100 // mrp) if mrp else 0
+        else:
+            sell, mrp, off = prices(buy, markup, disc)
         stock = g(row, 'Stock Qty')
         stock = None if stock in (None, '') else int(num(stock))
         size_in, size_cm = inch_to_cm(g(row, 'Size (inch)'))
@@ -143,7 +151,7 @@ def main():
             'gsm': int(num(g(row, 'Weight (g)'))) or None, 'price': sell, 'mrp': mrp, 'off': off,
             'stock': stock, 'featured': str(g(row, 'Featured (Y/N)') or '').strip().upper() == 'Y',
             'desc': str(g(row, 'Description (optional)') or '').strip(), 'img': imgs,
-            'art': ('a-kerchief' if cat == 'Napkins' else 'a-jute' if cat == 'Jute Bags' else 'a-white' if str(g(row, 'Filter Tag') or '') == 'White' else 'a-colour'),
+            'art': ('a-kerchief' if cat in ('Napkins', 'Hand Towels') else 'a-jute' if cat == 'Jute Bags' else 'a-white' if str(g(row, 'Filter Tag') or '') == 'White' else 'a-colour'),
         })
 
     # clean up stale images
