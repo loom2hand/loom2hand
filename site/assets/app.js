@@ -376,6 +376,7 @@
     var c = [];
     if (S.wa) c.push('<li><a href="' + waLink('') + '" target="_blank" rel="noopener">WhatsApp: ' + esc(S.phone || '+' + S.wa) + '</a></li>');
     if (S.phone) c.push('<li><a href="tel:' + esc(String(S.phone).replace(/\s/g, '')) + '">Call: ' + esc(S.phone) + '</a></li>');
+    if (S.phone2) c.push('<li><a href="tel:' + esc(String(S.phone2).replace(/\s/g, '')) + '">Call: ' + esc(S.phone2) + '</a></li>');
     if (S.email) c.push('<li><a href="mailto:' + esc(S.email) + '">' + esc(S.email) + '</a></li>');
     if (S.instagram) c.push('<li><a href="' + esc(S.instagram) + '" target="_blank" rel="noopener">Instagram</a></li>');
     if (S.location) c.push('<li class="muted">' + esc(S.location) + '</li>');

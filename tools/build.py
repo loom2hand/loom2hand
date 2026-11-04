@@ -162,7 +162,7 @@ def main():
     public = {
         'shop': S.get('Shop name') or 'Loom2hand', 'tagline': S.get('Tagline') or '',
         'wa': re.sub(r'\D', '', str(S.get('WhatsApp number') or '')),
-        'phone': S.get('Phone (display)') or '', 'email': S.get('Email') or '',
+        'phone': S.get('Phone (display)') or '', 'phone2': S.get('Phone 2 (display)') or '', 'email': S.get('Email') or '',
         'location': S.get('Location') or '', 'instagram': S.get('Instagram URL') or '',
         'shipFee': num(S.get('Shipping fee (₹)')), 'freeAbove': num(S.get('Free shipping above (₹)')),
         'minOrder': num(S.get('Minimum order (₹)')), 'lowStock': low,
