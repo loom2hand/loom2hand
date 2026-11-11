@@ -109,6 +109,7 @@ def main():
         return row[i] if i is not None and i < len(row) else None
 
     products, used, warnings = [], set(), []
+    hidden_out = []
     for row in ws.iter_rows(min_row=2, values_only=True):
         sku = g(row, 'SKU')
         if not sku:
@@ -119,6 +120,10 @@ def main():
         buy = num(g(row, 'Buy Rate (₹)'), 0)
         if not active:
             continue
+        _st = g(row, 'Stock Qty')
+        if _st not in (None, '') and num(_st) <= 0:
+            hidden_out.append(sku)
+            continue   # out of stock: hidden from the website
         fixed = g(row, 'Selling Price (₹)')
         fixed = fixed if isinstance(fixed, (int, float)) and fixed > 0 else None
         if buy <= 0 and not fixed:
@@ -183,6 +188,8 @@ def main():
 
     total = sum(os.path.getsize(os.path.join(IMG_OUT, f)) for f in os.listdir(IMG_OUT))
     print(f'Built {len(products)} products, {len(used)} images ({total/1024/1024:.1f} MB), version {ver}')
+    if hidden_out:
+        print(f'  Hidden (out of stock): {len(hidden_out)} items')
     for w in warnings:
         print('  ! ' + w)
     if public['wa'] in ('', '919999999999'):
